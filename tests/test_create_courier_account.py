@@ -1,6 +1,7 @@
 import requests
 import allure
 import pytest
+
 from data import Data
 
 class TestCourierCreation:
@@ -9,7 +10,7 @@ class TestCourierCreation:
     @allure.description('1. Отправить запрос на создание курьера '
                         '2. Проверить код ответа и тело ответа'
                         '3. Удалить курьера')
-    def test_courier_account_is_created(self):
+    def test_courier_account_is_created(self, login_and_delete_account):
         payload = {
             "login": Data.generate_random_string(10),
             "password": Data.generate_random_string(5),
@@ -21,13 +22,12 @@ class TestCourierCreation:
         assert response.status_code == 201
         assert response.json() == {'ok': True}
 
-        login_response = requests.post('https://qa-scooter.praktikum-services.ru/api/v1/courier/login',
-                                       data={"login": payload["login"], "password": payload["password"]})
+        login_response = requests.post('https://qa-scooter.praktikum-services.ru/api/v1/courier/login',data={"login": payload["login"], "password": payload["password"]})
         assert login_response.status_code == 200
-        courier_id = login_response.json().get("id")
-        delete_response = requests.delete(f'https://qa-scooter.praktikum-services.ru/api/v1/courier/{courier_id}')
-        assert delete_response.status_code == 200
-        assert delete_response.json() == {'ok': True}
+        assert "id" in login_response.json()
+
+        login_and_delete_account(payload["login"], payload["password"])
+
 
 
     @allure.title('Негативная проверка создания курьера при повторном использовании логина')
@@ -36,7 +36,7 @@ class TestCourierCreation:
                         '3. Отправить запрос на создание курьера с теми же данными'
                         '4. Проверить код ответа и тело ответа'
                         '5. Удалить курьера')
-    def test_same_login_creation_courier_account_error_is_appeared(self):
+    def test_same_login_creation_courier_account_error_is_appeared(self,login_and_delete_account):
         payload = {
             "login": Data.generate_random_string(10),
             "password": Data.generate_random_string(5),
@@ -51,21 +51,12 @@ class TestCourierCreation:
         assert response_2.json().get("code") == 409
         assert "Этот логин уже используется" in response_2.json().get("message", "")
 
-        login_response = requests.post(
-            'https://qa-scooter.praktikum-services.ru/api/v1/courier/login',
-            json={"login": payload["login"], "password": payload["password"]}
-        )
-        assert login_response.status_code == 200
-        courier_id = login_response.json().get("id")
-        delete_response = requests.delete(f'https://qa-scooter.praktikum-services.ru/api/v1/courier/{courier_id}')
-        assert delete_response.status_code == 200
-        assert delete_response.json() == {'ok': True}
+        login_and_delete_account(payload["login"], payload["password"])
 
 
     @allure.title('Негативная проверка создания курьера при отсутствии заполнения обязательного поля')
     @allure.description('1. Отправить запрос на создание курьера '
-                        '2. Проверить код ответа и тело ответа'
-                        '3. Удалить курьера')
+                        '2. Проверить код ответа и тело ответа')
     @pytest.mark.parametrize('empty_fields', [
         {'login': '', 'password': Data.generate_random_string(5), 'firstName': Data.generate_random_string(10)},
         {'login': Data.generate_random_string(10), 'password': '', 'firstName': Data.generate_random_string(10)}
