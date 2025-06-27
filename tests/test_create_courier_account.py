@@ -22,10 +22,6 @@ class TestCourierCreation:
         assert response.status_code == 201
         assert response.json() == {'ok': True}
 
-        login_response = requests.post('https://qa-scooter.praktikum-services.ru/api/v1/courier/login',data={"login": payload["login"], "password": payload["password"]})
-        assert login_response.status_code == 200
-        assert "id" in login_response.json()
-
         login_and_delete_account(payload["login"], payload["password"])
 
 
