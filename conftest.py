@@ -7,16 +7,20 @@ from data import Data
 @pytest.fixture
 def login_and_delete_account():
 
+    payload = {
+        "login": Data.generate_random_string(10),
+        "password": Data.generate_random_string(5),
+        "firstName": Data.generate_random_string(10)
+    }
     created_id = []
 
-    def login_account(login, password):
+    yield payload
 
-        login_response = requests.post('https://qa-scooter.praktikum-services.ru/api/v1/courier/login', data={"login": login, "password": password})
-        assert login_response.status_code == 200
-        courier_id = login_response.json().get("id")
-        created_id.append(courier_id)
+    login_response = requests.post('https://qa-scooter.praktikum-services.ru/api/v1/courier/login', data=payload)
+    assert login_response.status_code == 200
+    courier_id = login_response.json().get("id")
+    created_id.append(courier_id)
 
-    yield login_account
 
     for courier_id in created_id:
         delete_response = requests.delete(f'https://qa-scooter.praktikum-services.ru/api/v1/courier/{courier_id}')
